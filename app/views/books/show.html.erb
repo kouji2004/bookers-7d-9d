@@ -1,0 +1,94 @@
+<div class='container'>
+  <div class='row'>
+    <div class='col-md-3'>
+      <h2>User info</h2>
+      <%= render 'users/info', user: @book.user %>
+      <h2 class="mt-3">New book</h2>
+      <%= render 'form', book: Book.new %>
+    </div>
+    <div class='col-md-8 offset-md-1'>
+  		<h2>Book detail</h2>
+  		<table class='table'>
+  		  <tr>
+          <td><%= link_to(@book.user) do %>
+            <%= image_tag @book.user.get_profile_image, size:"100x100" %><br>
+            <%= @book.user.name %>
+            <% end %>
+          </td>
+          <td><%= link_to @book.title, @book %></td>
+          <td><%= @book.body %></td>
+          <td class=<%= "favorite-" + @book.id.to_s %> >
+            <%= render "favorites/btn", book: @book %>
+          </td>
+          <td class="book-comments-counter">
+            <%= render "book_comments/counter", book: @book %>
+          </td>
+          <% if @book.user == current_user %>
+            <td><%= link_to 'Edit', edit_book_path(@book), class: "btn btn-sm btn-success edit_book_#{@book.id}" %></td>
+            <td><%= link_to 'Destroy', @book, method: :delete, data: { confirm: '本当に消しますか？' }, class: "btn btn-sm btn-danger destroy_book_#{@book.id}" %></td>
+          <% end %>
+        </tr>
+      </table>
+
+      <div class="book-comments-index">
+        <%= render "book_comments/index", book: @book %>
+      </div>
+
+      <%= render "book_comments/form", book: @book, book_comment: @book_comment %>
+
+    </div>
+  </div>
+</div>
+
+
+<h3>Review Average --></h3>
+<div id="review_avg" data-score="<%= @review_avg %>"></div>
+<script>
+    $('#review_avg').empty(); // Turbolinksで星が増殖する現象を解消
+    $('#review_avg').raty({
+        readOnly: true,
+        starOff: '<%= asset_path('star-off.png') %>',
+        starOn: '<%= asset_path('star-on.png') %>',
+        starHalf: '<%= asset_path('star-half.png') %>',
+        // divタグのdata-score属性から評価の平均値を呼び出す
+        score: function () {
+            return $(this).attr('data-score');
+        },
+    });
+</script>
+
+<h3>Review --></h3>
+<%# 評価済みの場合は、再評価できないようにする %>
+<% if @review_flg.blank? %>
+
+  <%# 自分自身の投稿には評価できないようにする %>
+  <% if @post.user_id == current_user.id %>
+    <p>自分の投稿には、評価できません。</p>
+  <% else %>
+    <%= form_with model: @review, url: post_reviews_path(@post) do |review| %>
+      <div id="review"></div>
+      <%= review.submit %>
+    <% end %>
+
+    <script>
+        $('#review').empty(); // Turbolinksで星が増殖する現象を解消
+        $('#review').raty({
+            starOff: '<%= asset_path('star-off.png') %>',
+            starOn: '<%= asset_path('star-on.png') %>',
+            starHalf: '<%= asset_path('star-half.png') %>',
+            // 登録するモデル名とカラム名を記述
+            //  送信値として採用される
+            scoreName: 'review[review]',
+            half: true,
+        });
+    </script>
+  <% end %>
+
+<% else %>
+  <p>評価済みです。</p>
+  <ul>
+    <li>
+      <%= link_to '評価を削除', post_review_path(@post), method: :delete, data: { confirm: '評価削除しますか？' } %>
+    </li>
+  </ul>
+<% end %>
